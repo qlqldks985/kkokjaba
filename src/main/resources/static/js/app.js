@@ -7,6 +7,19 @@
 'use strict';
 
 const ZONES = ['정문 광장', '퍼레이드 거리', '회전목마', '푸드코트', '롤러코스터', '물놀이장', '기념품샵', '숲 산책로', '안내소 · 미아 보호소'];
+// 행사장 배치도. 좌표는 지도(SVG 1000×640) 안의 위치. 캠은 "어디에 설치돼 있는지"라는 고정 정보다.
+const SHELTER_ZONE = '안내소 · 미아 보호소';
+const MAP_ZONES = [
+  { name: SHELTER_ZONE, x: 40, y: 60, w: 220, h: 160, cams: ['CAM-08'], shelter: true },
+  { name: '숲 산책로', x: 290, y: 60, w: 240, h: 170, cams: [], blind: true },
+  { name: '롤러코스터', x: 560, y: 60, w: 400, h: 200, cams: ['CAM-06'] },
+  { name: '회전목마', x: 40, y: 250, w: 220, h: 180, cams: ['CAM-04'] },
+  { name: '푸드코트', x: 290, y: 260, w: 400, h: 180, cams: ['CAM-05'] },
+  { name: '물놀이장', x: 720, y: 290, w: 240, h: 150, cams: ['CAM-07'] },
+  { name: '정문 광장', x: 40, y: 460, w: 240, h: 150, cams: ['CAM-01'] },
+  { name: '퍼레이드 거리', x: 300, y: 470, w: 400, h: 140, cams: ['CAM-02', 'CAM-03'] },
+  { name: '기념품샵', x: 720, y: 470, w: 240, h: 140, cams: ['CAM-09'] },
+];
 const COLORS = { 노랑: '#f2c230', 빨강: '#e0473c', 초록: '#3aa35b', 분홍: '#e879a6', 하늘: '#4fa8e0', 주황: '#f08a24' };
 const STEPS = [
   { label: '접수', statuses: ['DETECTED', 'REPORTED'] },
@@ -115,8 +128,106 @@ function select(id) {
 
 function render() {
   renderSummary();
+  renderMap();
   renderList();
   renderDetail();
+}
+
+/* ---------- 행사장 지도 ---------- */
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const pinEls = new Map(); // id → 핀 <g>. 지웠다 새로 만들지 않고 재사용해야 위치 변화가 애니메이션으로 보인다.
+
+function svg(tag, attrs = {}, parent) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (parent) parent.appendChild(el);
+  return el;
+}
+
+/** 구역 사각형·이름·캠 표시처럼 변하지 않는 부분은 처음에 한 번만 그린다. */
+function drawMapBase() {
+  const map = $('#map');
+  const defs = svg('defs', {}, map);
+  const hatch = svg('pattern', { id: 'hatch', width: 14, height: 14, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  svg('rect', { width: 14, height: 14, fill: 'var(--surface)' }, hatch);
+  svg('line', { x1: 0, y1: 0, x2: 0, y2: 14, class: 'hatch-line' }, hatch);
+
+  for (const z of MAP_ZONES) {
+    const g = svg('g', { 'data-zone': z.name }, map);
+    svg('rect', { x: z.x, y: z.y, width: z.w, height: z.h, rx: 8,
+      class: `zone${z.shelter ? ' shelter' : ''}${z.blind ? ' blind' : ''}` }, g);
+    svg('text', { x: z.x + 14, y: z.y + 30, class: 'zname' }, g).textContent = z.name;
+    svg('text', { x: z.x + 14, y: z.y + 50, class: 'zsub' }, g).textContent =
+      z.cams.length ? `📷 ${z.cams.join(' · ')}` : '캠 없음 · 순찰 필요';
+    svg('text', { x: z.x + z.w - 12, y: z.y + 50, class: 'zcount' }, g); // 이름 줄이 아니라 캠 줄 오른쪽: 긴 구역 이름과 겹치지 않게
+  }
+  svg('g', { id: 'pins' }, map); // 핀은 구역보다 위에 그려야 하므로 마지막에 둔다
+}
+
+/**
+ * 지도에 표시할 위치. 보호 중인 아이는 마지막 발견 위치가 아니라 보호소에 있다.
+ * (서버는 발견 위치 기록을 지우지 않고 그대로 두므로, 화면에서 "지금 있는 곳"으로 바꿔 보여 준다.)
+ */
+function mapZoneOf(c) {
+  return c.status === 'SHELTERED' ? SHELTER_ZONE : c.lastSeenZone;
+}
+
+function toneOf(status) {
+  if (status === 'DETECTED' || status === 'REPORTED') return 'alert';
+  if (status === 'SEARCHING') return 'wait';
+  return 'safe';
+}
+
+function renderMap() {
+  const layer = $('#pins');
+  const byZone = new Map(MAP_ZONES.map((z) => [z.name, []]));
+  const offMap = [];
+  for (const c of [...cases.values()].sort((a, b) => a.id - b.id)) {
+    (byZone.get(mapZoneOf(c)) ?? offMap).push(c);
+  }
+
+  // 구역 테두리와 "n건" 표시: 아직 못 찾은 아이가 있는 구역은 빨간 테두리
+  for (const z of MAP_ZONES) {
+    const list = byZone.get(z.name);
+    const g = document.querySelector(`[data-zone="${CSS.escape(z.name)}"]`);
+    g.querySelector('.zone').classList.toggle('active', list.some((c) => toneOf(c.status) !== 'safe'));
+    g.querySelector('.zcount').textContent = list.length ? `${list.length}건` : '';
+  }
+
+  const seen = new Set();
+  for (const z of MAP_ZONES) {
+    byZone.get(z.name).forEach((c, i) => {
+      // 한 구역에 여러 명이면 칸을 나눠 겹치지 않게 놓는다
+      const cols = Math.max(1, Math.floor((z.w - 44) / 60));
+      const x = z.x + 40 + (i % cols) * 60;
+      const y = z.y + 105 + Math.floor(i / cols) * 60;
+      seen.add(c.id);
+
+      let pin = pinEls.get(c.id);
+      if (!pin) {
+        pin = svg('g', { class: 'pin new', tabindex: 0, role: 'button', 'data-id': c.id }, layer);
+        svg('circle', { r: 22, class: 'halo' }, pin);
+        svg('circle', { r: 15, class: 'body' }, pin);
+        svg('text', { y: -29, class: 'pid' }, pin).textContent = `#${c.id}`;
+        pin.style.transform = `translate(${x}px, ${y}px)`; // 새 핀은 미끄러지지 않고 제자리에 나타난다
+        pinEls.set(c.id, pin);
+      }
+      pin.setAttribute('class', `pin ${toneOf(c.status)}${c.id === selectedId ? ' selected' : ''}${pin.classList.contains('new') ? ' new' : ''}`);
+      pin.setAttribute('aria-label', `#${c.id} ${c.clothingColor} 옷, ${c.statusLabel}, ${mapZoneOf(c)}`);
+      pin.querySelector('.body').setAttribute('fill', colorOf(c.clothingColor));
+      pin.style.transform = `translate(${x}px, ${y}px)`;
+    });
+  }
+
+  // 인계가 끝나 목록에서 빠진 사건의 핀은 지운다
+  for (const [id, pin] of pinEls) {
+    if (!seen.has(id)) { pin.remove(); pinEls.delete(id); }
+  }
+
+  $('#mapSub').textContent = offMap.length
+    ? `지도 밖 위치 ${offMap.length}건은 목록에서 확인하세요`
+    : '핀을 누르면 아래에 상세가 열려요';
 }
 
 function renderSummary() {
@@ -151,7 +262,7 @@ function renderDetail() {
   if (!c) {
     $('#detailSub').textContent = '';
     delete box.dataset.sig;
-    box.innerHTML = '<p class="empty">왼쪽 목록에서 사건을 고르세요.</p>';
+    box.innerHTML = '<p class="empty">지도의 핀이나 오른쪽 목록에서 사건을 고르세요.</p>';
     return;
   }
   // 같은 사건·같은 version이면 다시 그리지 않는다. 입력 중인 칸이 지워지지 않게.
@@ -167,7 +278,7 @@ function renderDetail() {
     </ol>
     <dl class="facts">
       <div><dt>옷 색</dt><dd><span class="swatch" style="display:inline-block;width:14px;height:14px;vertical-align:-2px;background:${colorOf(c.clothingColor)}"></span> ${esc(c.clothingColor)}</dd></div>
-      <div><dt>마지막 위치</dt><dd>${esc(c.lastSeenZone)}</dd></div>
+      <div><dt>${['FOUND', 'SHELTERED', 'HANDED_OVER'].includes(c.status) ? '발견 위치' : '마지막으로 본 위치'}</dt><dd>${esc(c.lastSeenZone)}</dd></div>
       <div><dt>담당 직원</dt><dd>${c.assignedStaff ? esc(c.assignedStaff) : '아직 없음'}</dd></div>
       <div><dt>보호자</dt><dd>${c.guardianLinked ? '신고 연결됨' : '<span style="color:var(--alert)">미연결</span>'}</dd></div>
       <div><dt>접수 후</dt><dd class="mono" data-since="${c.createdAt}"></dd></div>
@@ -230,6 +341,20 @@ $('#caseList').addEventListener('click', (e) => {
   if (btn) select(Number(btn.dataset.id));
 });
 
+// 지도 핀: 마우스 클릭과 키보드(Enter·Space) 둘 다 받는다
+$('#map').addEventListener('click', (e) => {
+  const pin = e.target.closest('.pin');
+  if (pin) select(Number(pin.dataset.id));
+});
+$('#map').addEventListener('keydown', (e) => {
+  const pin = e.target.closest('.pin');
+  if (pin && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    select(Number(pin.dataset.id));
+  }
+});
+$('#map').addEventListener('animationend', (e) => e.target.classList?.remove('new'));
+
 // 상세 영역의 폼은 매번 새로 그려지므로, 부모 하나에 이벤트를 걸어 둔다 (이벤트 위임).
 $('#detail').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -275,8 +400,8 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 function colorOf(name) { return COLORS[name] ?? '#9aa5a1'; }
-function zoneOptions(selected) {
-  return ZONES.map((z) => `<option${z === selected ? ' selected' : ''}>${esc(z)}</option>`).join('');
+function zoneOptions(selected, zones = ZONES) {
+  return zones.map((z) => `<option${z === selected ? ' selected' : ''}>${esc(z)}</option>`).join('');
 }
 
 function setConn(live) {
@@ -322,7 +447,12 @@ function tick() {
 document.querySelectorAll('[data-colors]').forEach((s) => {
   s.innerHTML = Object.keys(COLORS).map((c) => `<option>${c}</option>`).join('');
 });
-document.querySelectorAll('[data-zones]').forEach((s) => { s.innerHTML = zoneOptions(); });
+// 캠 감지는 캠이 설치된 구역에서만 일어날 수 있다. 숲 산책로처럼 캠이 없는 곳은 고를 수 없게 한다.
+const CAM_ZONES = MAP_ZONES.filter((z) => z.cams.length && !z.shelter).map((z) => z.name);
+document.querySelectorAll('[data-zones]').forEach((s) => {
+  s.innerHTML = zoneOptions(undefined, s.dataset.zones === 'with-cam' ? CAM_ZONES : ZONES);
+});
+drawMapBase();
 setInterval(tick, 1000);
 tick();
 connect();

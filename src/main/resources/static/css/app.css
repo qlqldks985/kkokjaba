@@ -81,6 +81,43 @@ select, input[type=text] { border: 1px solid var(--line); background: var(--surf
 .chip.FOUND, .chip.SHELTERED { color: var(--safe); background: var(--safe-soft); }
 .chip.HANDED_OVER { color: var(--muted); background: var(--ground); }
 
+/* 행사장 지도 */
+.map-wrap { padding: 10px; }
+svg.map { width: 100%; height: auto; display: block; border-radius: 6px; background: var(--ground); }
+svg.map .zone { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: fill .3s, stroke .3s; }
+svg.map .zone.shelter { fill: var(--accent-soft); stroke: var(--accent); }
+svg.map .zone.blind { fill: url(#hatch); }
+svg.map .zone.active { stroke: var(--alert); stroke-width: 2.5; }
+svg.map .zname { fill: var(--ink); font-family: var(--display); font-weight: 800; font-size: 20px; }
+svg.map .zsub { fill: var(--muted); font-family: var(--mono); font-size: 13px; }
+svg.map .zcount { fill: var(--alert); font-family: var(--display); font-weight: 800; font-size: 18px; text-anchor: end; }
+svg.map .zone:not(.active) ~ .zcount { fill: var(--safe); } /* 모두 찾은 구역의 건수는 초록 */
+svg.map .hatch-line { stroke: var(--line); stroke-width: 6; }
+
+/* 핀: 위치가 바뀌면 transform이 바뀌고, transition 덕분에 미끄러지듯 이동한다 */
+svg.map .pin { cursor: pointer; transition: transform .9s cubic-bezier(.3, .7, .2, 1); outline: none; }
+svg.map .pin .body { stroke: var(--surface); stroke-width: 2.5; }
+svg.map .pin .halo { fill: none; stroke-width: 3.5; }
+svg.map .pin.alert .halo { stroke: var(--alert); animation: ping 1.4s ease-in-out infinite; }
+svg.map .pin.wait .halo { stroke: var(--wait); }
+svg.map .pin.safe .halo { stroke: var(--safe); }
+svg.map .pin .pid { fill: var(--ink); font-family: var(--mono); font-size: 15px; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+svg.map .pin.selected .body { stroke: var(--ink); }
+svg.map .pin.selected .halo { stroke-width: 5; }
+svg.map .pin:focus-visible .halo { stroke: var(--accent); stroke-width: 5; }
+svg.map .pin.new { animation: pop .5s ease-out; }
+@keyframes ping { 50% { opacity: .25; } }
+@keyframes pop { from { opacity: 0; } to { opacity: 1; } }
+
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .76rem; color: var(--muted); padding: 0 14px 12px; }
+.map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lg { width: 14px; height: 14px; border-radius: 50%; border: 3px solid; display: inline-block; }
+.lg.alert { border-color: var(--alert); }
+.lg.wait { border-color: var(--wait); }
+.lg.safe { border-color: var(--safe); }
+.lg.fill { border-color: var(--line); background: #f2c230; }
+.lg.hatch { border-radius: 3px; border: 1px solid var(--line); background: repeating-linear-gradient(45deg, var(--line) 0 3px, var(--surface) 3px 7px); }
+
 /* 사건 상세 */
 .detail { padding: 14px; display: grid; gap: 16px; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; counter-reset: s; }

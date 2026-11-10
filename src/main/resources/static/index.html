@@ -29,21 +29,35 @@
 
 <main class="wrap main">
   <div class="col">
-    <section class="panel" aria-labelledby="listTitle">
-      <header><h2 id="listTitle">진행 중인 사건</h2><small>최근 접수 순 · 눌러서 처리</small></header>
-      <ul id="caseList" class="cases"></ul>
-      <p id="emptyList" class="empty">진행 중인 사건이 없어요. 오른쪽에서 신고나 캠 감지를 넣어 보세요.</p>
+    <section class="panel" aria-labelledby="mapTitle">
+      <header><h2 id="mapTitle">행사장 지도</h2><small id="mapSub">핀을 누르면 아래에 상세가 열려요</small></header>
+      <div class="map-wrap">
+        <svg id="map" class="map" viewBox="0 0 1000 640" role="group" aria-label="행사장 구역별 진행 중인 사건"></svg>
+      </div>
+      <div class="map-legend" aria-hidden="true">
+        <span><i class="lg alert"></i>접수 · 아직 못 찾음</span>
+        <span><i class="lg wait"></i>수색 중</span>
+        <span><i class="lg safe"></i>발견 · 보호 중</span>
+        <span><i class="lg fill"></i>안의 색 = 아이 옷 색</span>
+        <span><i class="lg hatch"></i>캠 없는 구역</span>
+      </div>
     </section>
 
     <section class="panel" aria-labelledby="detailTitle">
       <header><h2 id="detailTitle">사건 상세</h2><small id="detailSub"></small></header>
       <div id="detail" class="detail">
-        <p class="empty">왼쪽 목록에서 사건을 고르세요.</p>
+        <p class="empty">지도의 핀이나 오른쪽 목록에서 사건을 고르세요.</p>
       </div>
     </section>
   </div>
 
   <div class="col">
+    <section class="panel" aria-labelledby="listTitle">
+      <header><h2 id="listTitle">진행 중인 사건</h2><small>최근 접수 순 · 눌러서 처리</small></header>
+      <ul id="caseList" class="cases"></ul>
+      <p id="emptyList" class="empty">진행 중인 사건이 없어요. 아래에서 신고나 캠 감지를 넣어 보세요.</p>
+    </section>
+
     <section class="panel" aria-labelledby="intakeTitle">
       <header><h2 id="intakeTitle">사건 접수</h2><small>보호자 앱 · 캠 서버 대신 입력</small></header>
       <div class="intake">
@@ -57,7 +71,7 @@
         <form id="detectForm" class="form">
           <h3>캠 감지 <span class="tag">YOLO 연동 예정</span></h3>
           <label>옷 색 <select name="clothingColor" data-colors></select></label>
-          <label>감지 구역 <select name="zone" data-zones></select></label>
+          <label>감지 구역 <select name="zone" data-zones="with-cam"></select></label>
           <button class="btn warn" type="submit">혼자 있는 아이 감지</button>
         </form>
       </div>
