@@ -41,8 +41,20 @@ window.KkokMap.createNaver = async function createNaver(container, keyId, opts) 
     zoomControlOptions: { position: N.Position.TOP_RIGHT, style: N.ZoomControlStyle.SMALL },
   });
 
-  const zoneEls = new Map(); // 이름 → { polygon, label, center, zone }
+  const zoneEls = new Map(); // 이름 → { polygon, label, center, zone, count }
   const pins = new Map(); // 사건 id → { marker, html, at }
+  const camMarkers = [];
+
+  // 멀리서 볼 때는 구역이 작아 글자와 아이콘이 겹친다. 확대 수준에 따라 보여 줄 것을 줄인다.
+  //   - 캠 아이콘: 가까이(17 이상)에서만
+  //   - 구역 이름표: 가까이에서는 전부, 멀리서는 사건이 있는 구역과 보호소만
+  const DETAIL_ZOOM = 17;
+  function applyZoomDetail() {
+    const near = map.getZoom() >= DETAIL_ZOOM;
+    camMarkers.forEach((m) => m.setVisible(near));
+    for (const z of zoneEls.values()) z.label.setVisible(near || z.zone.shelter || z.count > 0);
+  }
+  N.Event.addListener(map, 'zoom_changed', applyZoomDetail);
 
   // 마커 내용은 우리 HTML이다. 기준점(anchor)을 왼쪽 위(0,0)에 두고 CSS transform으로 가운데를 맞춘다.
   const icon = (html) => ({ content: html, anchor: new N.Point(0, 0) });
@@ -64,14 +76,15 @@ window.KkokMap.createNaver = async function createNaver(container, keyId, opts) 
       const label = new N.Marker({ map, position: top, clickable: false, zIndex: 50, icon: icon(labelHtml(z, 0, false)) });
       const center = new N.LatLng((Math.min(...lats) + Math.max(...lats)) / 2, (Math.min(...lngs) + Math.max(...lngs)) / 2);
       for (const cam of z.cameras) {
-        new N.Marker({ map, position: new N.LatLng(cam.lat, cam.lng), clickable: false, zIndex: 40,
-          title: cam.code, icon: icon(`<div class="ncam" title="${esc(cam.code)}">📷</div>`) });
+        camMarkers.push(new N.Marker({ map, position: new N.LatLng(cam.lat, cam.lng), clickable: false, zIndex: 40,
+          title: cam.code, icon: icon(`<div class="ncam" title="${esc(cam.code)}">📷<span>${esc(cam.code)}</span></div>`) }));
       }
-      zoneEls.set(z.name, { polygon, label, center, zone: z, labelHtml: '' });
+      zoneEls.set(z.name, { polygon, label, center, zone: z, labelHtml: '', count: 0 });
     }
-    // 구역 전체가 보이도록 화면을 맞춘다. 가장자리에 여유를 조금 둔다.
-    const padLat = (maxLat - minLat) * 0.12, padLng = (maxLng - minLng) * 0.08;
-    map.fitBounds(new N.LatLngBounds(new N.LatLng(minLat - padLat, minLng - padLng), new N.LatLng(maxLat + padLat, maxLng + padLng)));
+    // 구역 전체가 보이도록 화면을 맞춘다. 위쪽은 이름표가 들어갈 자리를 조금 더 둔다.
+    const padLat = (maxLat - minLat) * 0.06, padLng = (maxLng - minLng) * 0.04;
+    map.fitBounds(new N.LatLngBounds(new N.LatLng(minLat - padLat, minLng - padLng), new N.LatLng(maxLat + padLat * 2, maxLng + padLng)));
+    applyZoomDetail();
   }
 
   function zoneColors(z, active) {
@@ -93,6 +106,7 @@ window.KkokMap.createNaver = async function createNaver(container, keyId, opts) 
       z.polygon.setOptions(zoneColors(z.zone, active));
       const lh = labelHtml(z.zone, list.length, active);
       if (lh !== z.labelHtml) { z.label.setIcon(icon(lh)); z.labelHtml = lh; }
+      z.count = list.length;
 
       list.forEach((c, i) => {
         // 같은 구역 핀은 같은 지점에 두고, 화면에서 몇 픽셀씩 비켜 그린다(확대·축소해도 간격 유지)
@@ -121,6 +135,7 @@ window.KkokMap.createNaver = async function createNaver(container, keyId, opts) 
     for (const [id, p] of pins) {
       if (!seen.has(id)) { p.marker.setMap(null); pins.delete(id); }
     }
+    applyZoomDetail(); // 사건이 생기거나 끝나면 이름표를 보일 구역도 바뀐다
   }
 
   /** 네이버 마커는 위치를 바꾸면 순간 이동한다. 0.9초 동안 조금씩 옮겨 이동이 눈에 보이게 한다. */

@@ -141,6 +141,11 @@ JPA `@Version`만으로는 정확히 동시에 들어온 요청만 잡힙니다.
 - 처음 시도: `@PreDestroy`에서 연결을 닫았지만 효과가 없었습니다. 이 메서드는 그 기다림이 끝난 **뒤에** 호출되기 때문입니다.
 - 해결: 종료 신호(`ContextClosedEvent`)를 받자마자 열린 연결을 모두 닫도록 바꿨습니다. 전체 테스트 시간이 47초에서 17초로 줄었고, 운영에서 재시작할 때 멈추는 문제도 함께 막았습니다.
 
+**실제 지도에 올려 보니 보호소가 강 위에 걸침**
+- 좌표만 보고 잡은 구역을 네이버 지도에 올려 확대해 보니, 미아 보호소 구역 일부가 한강 위에 있었습니다.
+- 이미 적용된 V3 마이그레이션은 고치지 않고(Flyway 체크섬이 깨짐), `V4__shrink_shelter_zone.sql`로 보호소를 천막 크기로 줄여 육지 쪽으로 옮겼습니다. 운영 DB에서도 같은 순서로 안전하게 바로잡을 수 있는 방식입니다.
+- 멀리서 볼 때 구역 이름·캠 아이콘이 겹치는 문제는, 확대 수준이 17 미만이면 캠 아이콘을 숨기고 사건이 있는 구역과 보호소의 이름표만 보이게 해서 정리했습니다.
+
 **Flyway 전환 후 Hibernate 검증 실패 대비**
 - Hibernate 7은 MySQL에서 enum 필드를 `ENUM` 컬럼으로 기대합니다. 마이그레이션에서 `VARCHAR`로 만들었기 때문에 `validate`가 앱 시작을 막을 수 있어, 필드에 `@JdbcTypeCode(SqlTypes.VARCHAR)`를 붙여 의도를 명시했습니다.
 
@@ -212,7 +217,7 @@ src/main/java/com/jjh/kkokjaba
     ├── service/           ZoneService, InvalidZoneException
     └── web/               ZoneController, ZoneResponse
 src/main/resources
-├── db/migration/          V1 사건 테이블 · V2 구역 테이블 · V3 여의도 구역 데이터
+├── db/migration/          V1 사건 테이블 · V2 구역 테이블 · V3 여의도 구역 데이터 · V4 보호소 위치 보정
 └── static/                index.html, css/app.css,
                            js/app.js, js/map-naver.js, js/map-plain.js
 ```

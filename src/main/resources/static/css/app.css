@@ -110,7 +110,7 @@ svg.map .pin.new { animation: pop .5s ease-out; }
 @keyframes pop { from { opacity: 0; } to { opacity: 1; } }
 
 /* 네이버 지도 위 마커들. 마커 기준점이 왼쪽 위라서 transform으로 가운데를 맞춘다. */
-.naver-map { width: 100%; height: clamp(360px, 58vh, 560px); border-radius: 6px; overflow: hidden; }
+.naver-map { width: 100%; height: clamp(420px, 72vh, 660px); border-radius: 6px; overflow: hidden; }
 .naver-map * { box-sizing: content-box; } /* 지도 라이브러리 내부 요소는 기본 상자 모델을 기대한다 */
 .nlabel { transform: translate(-50%, calc(-100% - 4px)); white-space: nowrap; font: 700 12px/1.3 var(--body); color: #14201d;
   background: rgb(255 255 255 / .92); border: 1px solid #c9d1cd; border-radius: 6px; padding: 2px 7px; display: flex; gap: 6px; align-items: center; }
@@ -118,12 +118,14 @@ svg.map .pin.new { animation: pop .5s ease-out; }
 .nlabel b { font-size: 11px; color: #fff; border-radius: 999px; padding: 0 6px; }
 .nlabel b.alert { background: #d23b2f; }
 .nlabel b.safe { background: #1d8a4e; }
-.ncam { transform: translate(-50%, -50%); font-size: 14px; line-height: 1; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .4)); }
+.ncam { transform: translate(-50%, -50%); font-size: 14px; line-height: 1; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .4)); display: flex; align-items: center; gap: 2px; }
+.ncam span { font: 600 10px var(--mono); color: #14201d; background: rgb(255 255 255 / .85); border-radius: 3px; padding: 0 3px; }
 .npin { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))); display: grid; justify-items: center; gap: 1px; cursor: pointer; outline: none; }
 .npin span { font: 600 11px var(--mono); color: #14201d; background: rgb(255 255 255 / .9); border-radius: 4px; padding: 0 4px; }
 .npin i { display: block; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 4px var(--tone), 0 2px 6px rgb(0 0 0 / .35); }
 .npin.alert { --tone: #d23b2f; }
-.npin.alert i { animation: ping 1.4s ease-in-out infinite; }
+.npin.alert i { animation: ring 1.4s ease-in-out infinite; } /* 핀 색은 그대로 두고 바깥 고리만 퍼졌다 줄어든다 */
+@keyframes ring { 50% { box-shadow: 0 0 0 9px rgb(210 59 47 / .35), 0 2px 6px rgb(0 0 0 / .35); } }
 .npin.wait { --tone: #b87a12; }
 .npin.safe { --tone: #1d8a4e; }
 .npin.selected i { border-color: #14201d; box-shadow: 0 0 0 6px var(--tone), 0 2px 8px rgb(0 0 0 / .45); }
