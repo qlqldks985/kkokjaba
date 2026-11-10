@@ -74,7 +74,7 @@ class CaseStreamTest {
 	@Test
 	@DisplayName("사건이 생기고 바뀔 때마다 연결된 화면에 바로 알림이 간다")
 	void pushesOpenedAndUpdated() throws Exception {
-		String created = post("/api/cases/detections", "{\"clothingColor\":\"purple\",\"zone\":\"gate\"}").body();
+		String created = post("/api/cases/detections", "{\"clothingColor\":\"purple\",\"zone\":\"잔디마당\"}").body();
 		String id = created.replaceAll(".*\"id\":(\\d+).*", "$1");
 
 		Map<String, String> opened = next();
@@ -91,7 +91,7 @@ class CaseStreamTest {
 	@Test
 	@DisplayName("규칙 위반으로 실패한 요청은 알림을 보내지 않는다")
 	void failedRequestSendsNothing() throws Exception {
-		String created = post("/api/cases/detections", "{\"clothingColor\":\"red\",\"zone\":\"pool\"}").body();
+		String created = post("/api/cases/detections", "{\"clothingColor\":\"red\",\"zone\":\"푸드트럭 존\"}").body();
 		String id = created.replaceAll(".*\"id\":(\\d+).*", "$1");
 		next(); // opened
 

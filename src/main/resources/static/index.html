@@ -15,7 +15,7 @@
   <div class="wrap">
     <div class="brand">
       <h1>꼭<span>잡아</span> 관제실</h1>
-      <p>놀이공원 미아 찾기 · 실시간 연동</p>
+      <p>여의도 한강공원 축제 · 미아 찾기 실시간 관제</p>
     </div>
     <div class="summary" aria-label="현황">
       <span><b id="openCount" class="mono">0</b> 진행 중</span>
@@ -30,16 +30,14 @@
 <main class="wrap main">
   <div class="col">
     <section class="panel" aria-labelledby="mapTitle">
-      <header><h2 id="mapTitle">행사장 지도</h2><small id="mapSub">핀을 누르면 아래에 상세가 열려요</small></header>
-      <div class="map-wrap">
-        <svg id="map" class="map" viewBox="0 0 1000 640" role="group" aria-label="행사장 구역별 진행 중인 사건"></svg>
-      </div>
+      <header><h2 id="mapTitle">행사장 지도 <span id="mapKind" class="tag"></span></h2><small id="mapSub">여의도 한강공원 축제</small></header>
+      <div id="mapCanvas" class="map-wrap"></div>
       <div class="map-legend" aria-hidden="true">
         <span><i class="lg alert"></i>접수 · 아직 못 찾음</span>
         <span><i class="lg wait"></i>수색 중</span>
         <span><i class="lg safe"></i>발견 · 보호 중</span>
         <span><i class="lg fill"></i>안의 색 = 아이 옷 색</span>
-        <span><i class="lg hatch"></i>캠 없는 구역</span>
+        <span><i class="lg hatch"></i>빗금·점선 = 캠 없는 구역</span>
       </div>
     </section>
 
@@ -86,6 +84,8 @@
 
 <div id="toast" class="toast" role="alert" hidden></div>
 
+<script src="/js/map-plain.js"></script>
+<script src="/js/map-naver.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

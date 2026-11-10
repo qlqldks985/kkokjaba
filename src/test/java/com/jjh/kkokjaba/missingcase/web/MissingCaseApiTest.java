@@ -41,14 +41,14 @@ class MissingCaseApiTest {
 	@Test
 	@DisplayName("신고부터 인계까지 HTTP로 끝까지 진행된다")
 	void fullFlowOverHttp() throws Exception {
-		long id = report("B-1137", "노랑", "퍼레이드 거리");
+		long id = report("B-1137", "노랑", "물빛무대 앞");
 
 		send("/api/cases/" + id + "/assign", "{\"staffName\":\"박 매니저\"}")
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("SEARCHING"))
 				.andExpect(jsonPath("$.statusLabel").value("수색 중"));
-		send("/api/cases/" + id + "/found", "{\"zone\":\"회전목마 앞\"}")
-				.andExpect(jsonPath("$.lastSeenZone").value("회전목마 앞"));
+		send("/api/cases/" + id + "/found", "{\"zone\":\"잔디마당\"}")
+				.andExpect(jsonPath("$.lastSeenZone").value("잔디마당"));
 		send("/api/cases/" + id + "/shelter", null)
 				.andExpect(jsonPath("$.nextSteps[0]").value("HANDED_OVER"));
 		send("/api/cases/" + id + "/handover", "{\"guardianBand\":\"b-1137\"}") // 소문자도 통과
@@ -64,7 +64,7 @@ class MissingCaseApiTest {
 	@Test
 	@DisplayName("사건을 만들면 201과 Location 헤더를 돌려주고, 팔찌 번호는 응답에 없다")
 	void createReturns201WithoutBand() throws Exception {
-		send("/api/cases/reports", "{\"guardianBand\":\"B-2001\",\"clothingColor\":\"빨강\",\"lastSeenZone\":\"정문\"}")
+		send("/api/cases/reports", "{\"guardianBand\":\"B-2001\",\"clothingColor\":\"빨강\",\"lastSeenZone\":\"여의나루역 출구 광장\"}")
 				.andExpect(status().isCreated())
 				.andExpect(header().string("Location", containsString("/api/cases/")))
 				.andExpect(jsonPath("$.guardianLinked").value(true))
@@ -74,9 +74,9 @@ class MissingCaseApiTest {
 	@Test
 	@DisplayName("단계를 건너뛰면 409와 이유를 돌려준다")
 	void skipStepReturns409() throws Exception {
-		long id = report("B-3001", "파랑", "푸드코트");
+		long id = report("B-3001", "파랑", "푸드트럭 존");
 
-		send("/api/cases/" + id + "/found", "{\"zone\":\"푸드코트\"}")
+		send("/api/cases/" + id + "/found", "{\"zone\":\"푸드트럭 존\"}")
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.detail").value("보호자 신고에서 발견(으)로 바로 넘어갈 수 없습니다."));
 	}
@@ -84,9 +84,9 @@ class MissingCaseApiTest {
 	@Test
 	@DisplayName("팔찌 번호가 다르면 인계되지 않는다")
 	void wrongBandReturns409() throws Exception {
-		long id = report("B-4001", "초록", "물놀이장");
+		long id = report("B-4001", "초록", "마포대교 남단");
 		send("/api/cases/" + id + "/assign", "{\"staffName\":\"최 매니저\"}");
-		send("/api/cases/" + id + "/found", "{\"zone\":\"물놀이장\"}");
+		send("/api/cases/" + id + "/found", "{\"zone\":\"마포대교 남단\"}");
 		send("/api/cases/" + id + "/shelter", null);
 
 		send("/api/cases/" + id + "/handover", "{\"guardianBand\":\"B-9999\"}")
@@ -98,7 +98,7 @@ class MissingCaseApiTest {
 	@DisplayName("다른 직원이 먼저 바꾼 사건을 옛날 version으로 바꾸려 하면 409")
 	@Transactional(propagation = Propagation.NOT_SUPPORTED) // 요청마다 실제로 커밋돼야 version이 올라간다
 	void staleVersionReturns409() throws Exception {
-		long id = report("B-5001", "하늘", "기념품샵"); // 새 사건 version = 0
+		long id = report("B-5001", "하늘", "원효대교 남단"); // 새 사건 version = 0
 
 		// 직원 B가 먼저 배정 → version 1
 		send("/api/cases/" + id + "/assign", "{\"staffName\":\"직원 B\"}", "\"0\"")
@@ -106,7 +106,7 @@ class MissingCaseApiTest {
 				.andExpect(jsonPath("$.version").value(1));
 
 		// 직원 A는 아직 version 0 화면을 보고 "발견"을 누름 → 거절
-		send("/api/cases/" + id + "/found", "{\"zone\":\"기념품샵\"}", "\"0\"")
+		send("/api/cases/" + id + "/found", "{\"zone\":\"원효대교 남단\"}", "\"0\"")
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.title").value("동시 수정"));
 	}
@@ -114,7 +114,7 @@ class MissingCaseApiTest {
 	@Test
 	@DisplayName("필수 값이 비면 400")
 	void blankFieldReturns400() throws Exception {
-		send("/api/cases/detections", "{\"clothingColor\":\"\",\"zone\":\"정문\"}")
+		send("/api/cases/detections", "{\"clothingColor\":\"\",\"zone\":\"여의나루역 출구 광장\"}")
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.detail").value("옷 색을 입력하세요."));
 	}
@@ -125,6 +125,35 @@ class MissingCaseApiTest {
 		mvc.perform(get("/api/cases/999999"))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.detail").value("999999번 사건을 찾을 수 없습니다."));
+	}
+
+	@Test
+	@DisplayName("행사장에 없는 구역으로 신고하면 400")
+	void unknownZoneReturns400() throws Exception {
+		send("/api/cases/reports", "{\"guardianBand\":\"B-6001\",\"clothingColor\":\"노랑\",\"lastSeenZone\":\"롯데월드\"}")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value("행사장에 없는 구역입니다: 롯데월드"));
+	}
+
+	@Test
+	@DisplayName("캠이 없는 구역에서 캠 감지가 들어오면 400")
+	void detectionWithoutCameraReturns400() throws Exception {
+		send("/api/cases/detections", "{\"clothingColor\":\"노랑\",\"zone\":\"강변 산책로 (서쪽)\"}")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value("강변 산책로 (서쪽)에는 캠이 없어 캠 감지를 받을 수 없습니다."));
+	}
+
+	@Test
+	@DisplayName("구역 목록은 순서대로, 경계·캠과 함께 내려온다")
+	void zonesAreListed() throws Exception {
+		mvc.perform(get("/api/zones"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(9))
+				.andExpect(jsonPath("$[0].name").value("물빛무대 앞"))
+				.andExpect(jsonPath("$[0].boundary.length()").value(4))
+				.andExpect(jsonPath("$[1].hasCamera").value(false))
+				.andExpect(jsonPath("$[3].shelter").value(true))
+				.andExpect(jsonPath("$[4].cameras.length()").value(2));
 	}
 
 	private long report(String band, String color, String zone) throws Exception {

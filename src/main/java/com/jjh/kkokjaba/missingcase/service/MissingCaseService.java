@@ -14,6 +14,7 @@ import com.jjh.kkokjaba.missingcase.domain.MissingCase;
 import com.jjh.kkokjaba.missingcase.event.CaseChanged;
 import com.jjh.kkokjaba.missingcase.event.CaseChanged.Kind;
 import com.jjh.kkokjaba.missingcase.repository.MissingCaseRepository;
+import com.jjh.kkokjaba.zone.service.ZoneService;
 
 /**
  * 컨트롤러와 도메인 사이의 얇은 층.
@@ -27,10 +28,12 @@ public class MissingCaseService {
 	private static final Set<CaseStatus> OPEN = EnumSet.complementOf(EnumSet.of(CaseStatus.HANDED_OVER));
 
 	private final MissingCaseRepository repository;
+	private final ZoneService zones;
 	private final ApplicationEventPublisher events;
 
-	public MissingCaseService(MissingCaseRepository repository, ApplicationEventPublisher events) {
+	public MissingCaseService(MissingCaseRepository repository, ZoneService zones, ApplicationEventPublisher events) {
 		this.repository = repository;
+		this.zones = zones;
 		this.events = events;
 	}
 
@@ -44,11 +47,13 @@ public class MissingCaseService {
 
 	@Transactional
 	public MissingCase report(String guardianBand, String clothingColor, String lastSeenZone) {
+		zones.requireZone(lastSeenZone);
 		return publish(Kind.OPENED, repository.save(MissingCase.reportedByGuardian(guardianBand, clothingColor, lastSeenZone)));
 	}
 
 	@Transactional
 	public MissingCase detect(String clothingColor, String zone) {
+		zones.requireCameraZone(zone);
 		return publish(Kind.OPENED, repository.save(MissingCase.detectedByCamera(clothingColor, zone)));
 	}
 
@@ -76,6 +81,7 @@ public class MissingCaseService {
 	@Transactional
 	public MissingCase markFound(Long id, String zone, Long expectedVersion) {
 		MissingCase c = load(id, expectedVersion);
+		zones.requireZone(zone);
 		c.markFound(zone);
 		return publish(Kind.UPDATED, c);
 	}

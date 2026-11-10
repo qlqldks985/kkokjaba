@@ -1,3 +1,6 @@
 # 이 파일을 config/local.properties 로 복사하고, setup-local.sql 에서 정한 비밀번호를 넣으세요.
 # config/local.properties 는 git에 올라가지 않습니다. 대신 환경변수 DB_PASSWORD 를 써도 됩니다.
 spring.datasource.password=CHANGE_ME
+
+# (선택) 네이버 지도 Client ID. 비워 두면 간이 지도로 표시됩니다.
+kkokjaba.map.naver-key-id=

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.jjh.kkokjaba.missingcase.domain.CaseRuleException;
 import com.jjh.kkokjaba.missingcase.service.CaseNotFoundException;
+import com.jjh.kkokjaba.zone.service.InvalidZoneException;
 
 /**
  * 예외를 HTTP 응답으로 바꾸는 곳을 한 군데로 모은다.
@@ -27,6 +28,11 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(CaseRuleException.class)
 	public ProblemDetail caseRule(CaseRuleException e) {
 		return problem(HttpStatus.CONFLICT, "진행할 수 없는 요청", e.getMessage());
+	}
+
+	@ExceptionHandler(InvalidZoneException.class)
+	public ProblemDetail invalidZone(InvalidZoneException e) {
+		return problem(HttpStatus.BAD_REQUEST, "구역 오류", e.getMessage());
 	}
 
 	@ExceptionHandler(CaseNotFoundException.class)
