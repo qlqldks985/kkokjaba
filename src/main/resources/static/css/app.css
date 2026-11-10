@@ -1,0 +1,124 @@
+/* 색은 모두 변수로 두고, 다크 모드에서는 변수 값만 바꾼다. */
+:root {
+  --bg: #eef1f0; --surface: #ffffff; --ground: #e3e9e6; --ink: #14201d; --muted: #5a6863; --line: #d4dcd8;
+  --accent: #0f6b63; --accent-soft: #dcefec;
+  --alert: #d23b2f; --alert-soft: #fbe4e1; --safe: #1d8a4e; --safe-soft: #dff3e7; --wait: #b87a12; --wait-soft: #f8eed8;
+  --display: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1412; --surface: #151f1c; --ground: #1b2723; --ink: #e4ece9; --muted: #93a39d; --line: #2a3833;
+    --accent: #4cc2b4; --accent-soft: #16332f;
+    --alert: #f0675b; --alert-soft: #3a1f1c; --safe: #4cc38a; --safe-soft: #173326; --wait: #e2ad4a; --wait-soft: #362b16;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; }
+h2 { font-size: 1rem; font-weight: 800; }
+h3 { font-size: .92rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+p { margin: 0; }
+small { color: var(--muted); font-size: .78rem; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 16px; }
+
+/* 상단 바 */
+.top { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding-block: 10px; }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; flex-wrap: wrap; }
+.brand h1 { font-size: 1.35rem; font-weight: 900; letter-spacing: -.02em; }
+.brand h1 span { color: var(--accent); }
+.brand p { font-size: .82rem; color: var(--muted); }
+.summary { display: flex; gap: 14px; font-size: .82rem; color: var(--muted); }
+.summary b { color: var(--ink); font-size: 1.05rem; margin-right: 2px; }
+.clock { font-weight: 600; }
+.conn { font-size: .78rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+.conn::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.conn.live { color: var(--safe); background: var(--safe-soft); }
+.conn.live::before { animation: pulse 1.6s ease-in-out infinite; }
+.conn.wait { color: var(--wait); background: var(--wait-soft); }
+@keyframes pulse { 50% { opacity: .3; } }
+
+/* 본문 */
+.main { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap: 16px; padding-block: 16px 40px; }
+.col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.panel > header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.empty { padding: 22px 14px; color: var(--muted); font-size: .88rem; text-align: center; }
+
+/* 버튼·입력 */
+button, select, input { font: inherit; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 7px 14px; font-size: .85rem; cursor: pointer; }
+.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: wait; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+.btn.primary:hover:not(:disabled) { color: var(--surface); filter: brightness(1.08); }
+.btn.warn { border-color: var(--alert); color: var(--alert); font-weight: 600; }
+select, input[type=text] { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 7px 9px; font-size: .88rem; width: 100%; min-width: 0; }
+
+/* 사건 목록 */
+.cases { list-style: none; margin: 0; padding: 6px; display: grid; gap: 4px; max-height: 360px; overflow-y: auto; }
+.case { width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; text-align: left;
+  background: none; border: 1px solid transparent; border-radius: 8px; padding: 9px 10px; color: inherit; cursor: pointer; }
+.case:hover { background: var(--ground); }
+.case[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.case .who { font-weight: 600; }
+.case .where { grid-column: 2; font-size: .8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case .since { grid-row: 1 / 3; grid-column: 3; text-align: right; font-size: .78rem; color: var(--muted); display: grid; gap: 4px; justify-items: end; }
+.swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); grid-row: 1 / 3; }
+.flash { animation: flash 1.4s ease-out; }
+@keyframes flash { from { background: var(--wait-soft); } to { background: transparent; } }
+
+.chip { font-size: .74rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.DETECTED, .chip.REPORTED { color: var(--alert); background: var(--alert-soft); }
+.chip.SEARCHING { color: var(--wait); background: var(--wait-soft); }
+.chip.FOUND, .chip.SHELTERED { color: var(--safe); background: var(--safe-soft); }
+.chip.HANDED_OVER { color: var(--muted); background: var(--ground); }
+
+/* 사건 상세 */
+.detail { padding: 14px; display: grid; gap: 16px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; counter-reset: s; }
+.steps li { font-size: .76rem; text-align: center; color: var(--muted); padding-top: 10px; border-top: 4px solid var(--line); }
+.steps li.done { border-color: var(--accent); color: var(--ink); }
+.steps li.now { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 0; }
+.facts div { background: var(--ground); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.facts dt { font-size: .74rem; color: var(--muted); }
+.facts dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.action { border: 1px dashed var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 10px; }
+.action p { font-size: .85rem; color: var(--muted); }
+.action .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.action .row > :first-child { flex: 1 1 160px; }
+.done-msg { color: var(--safe); font-weight: 700; }
+
+/* 접수 폼 */
+.intake { padding: 14px; display: grid; gap: 18px; }
+.form { display: grid; gap: 8px; }
+.form + .form { border-top: 1px solid var(--line); padding-top: 16px; }
+.form label { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+.tag { font-family: var(--body); font-size: .7rem; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+
+/* 알림 기록 */
+.log { list-style: none; margin: 0; padding: 8px 14px 14px; display: grid; gap: 6px; max-height: 320px; overflow-y: auto; font-size: .84rem; }
+.log li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+.log time { font-family: var(--mono); color: var(--muted); font-size: .78rem; padding-top: 1px; }
+.log .alert { color: var(--alert); font-weight: 600; }
+.log .safe { color: var(--safe); font-weight: 600; }
+
+/* 오류 알림 */
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); max-width: min(520px, calc(100vw - 32px));
+  background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 8px; font-size: .88rem; box-shadow: 0 6px 24px rgb(0 0 0 / .25); z-index: 10; }
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .summary { order: 3; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+}

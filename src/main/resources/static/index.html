@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>꼭잡아 관제실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@700;800;900&family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>꼭<span>잡아</span> 관제실</h1>
+      <p>놀이공원 미아 찾기 · 실시간 연동</p>
+    </div>
+    <div class="summary" aria-label="현황">
+      <span><b id="openCount" class="mono">0</b> 진행 중</span>
+      <span><b id="searchCount" class="mono">0</b> 수색 중</span>
+      <span><b id="shelterCount" class="mono">0</b> 보호 중</span>
+    </div>
+    <span id="conn" class="conn wait" role="status">연결 중…</span>
+    <span id="clock" class="clock mono" aria-hidden="true"></span>
+  </div>
+</header>
+
+<main class="wrap main">
+  <div class="col">
+    <section class="panel" aria-labelledby="listTitle">
+      <header><h2 id="listTitle">진행 중인 사건</h2><small>최근 접수 순 · 눌러서 처리</small></header>
+      <ul id="caseList" class="cases"></ul>
+      <p id="emptyList" class="empty">진행 중인 사건이 없어요. 오른쪽에서 신고나 캠 감지를 넣어 보세요.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="detailTitle">
+      <header><h2 id="detailTitle">사건 상세</h2><small id="detailSub"></small></header>
+      <div id="detail" class="detail">
+        <p class="empty">왼쪽 목록에서 사건을 고르세요.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="panel" aria-labelledby="intakeTitle">
+      <header><h2 id="intakeTitle">사건 접수</h2><small>보호자 앱 · 캠 서버 대신 입력</small></header>
+      <div class="intake">
+        <form id="reportForm" class="form">
+          <h3>보호자 신고</h3>
+          <label>팔찌 번호 <input name="guardianBand" type="text" placeholder="B-1137" maxlength="20" required autocomplete="off"></label>
+          <label>옷 색 <select name="clothingColor" data-colors></select></label>
+          <label>마지막으로 본 곳 <select name="lastSeenZone" data-zones></select></label>
+          <button class="btn primary" type="submit">신고 접수</button>
+        </form>
+        <form id="detectForm" class="form">
+          <h3>캠 감지 <span class="tag">YOLO 연동 예정</span></h3>
+          <label>옷 색 <select name="clothingColor" data-colors></select></label>
+          <label>감지 구역 <select name="zone" data-zones></select></label>
+          <button class="btn warn" type="submit">혼자 있는 아이 감지</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="logTitle">
+      <header><h2 id="logTitle">실시간 알림</h2><small>SSE · 모든 관제 화면에 동시 전송</small></header>
+      <ol id="log" class="log"></ol>
+    </section>
+  </div>
+</main>
+
+<div id="toast" class="toast" role="alert" hidden></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
